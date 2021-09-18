@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-
 	go hello()
 	time.Sleep(1 * time.Second)
 	goodbye()
