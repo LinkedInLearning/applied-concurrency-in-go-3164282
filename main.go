@@ -7,7 +7,7 @@ import (
 
 func main() {
 	// create a channel
-	ch := make(chan string)
+	ch := make(chan string, 1)
 	// start the greeter to provide a greeting
 	go greet(ch)
 	// sleep for a long time
@@ -22,7 +22,7 @@ func main() {
 }
 
 // greet writes a greet to the given channel and then says goodbye
-func greet(ch chan string) {
+func greet(ch chan<- string) {
 	fmt.Println("Greeter ready!")
 	// greet
 	ch <- "Hello, world!"
