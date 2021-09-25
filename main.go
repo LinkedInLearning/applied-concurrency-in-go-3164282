@@ -7,7 +7,7 @@ import (
 
 func main() {
 	// create a channel
-	ch := make(chan string)
+	ch := make(chan string, 1)
 	// start the greeter to provide a greeting
 	go greet(ch)
 	// sleep for a long time
