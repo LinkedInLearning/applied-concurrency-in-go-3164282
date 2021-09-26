@@ -5,19 +5,24 @@ import (
 	"time"
 )
 
+// greetings in many languages
+var greetings = []string{"Hello!", "Ciao!", "Hola!", "Hej!", "Salut!"}
+
 func main() {
 	// create a channel
 	ch := make(chan string, 1)
 	// start the greeter to provide a greeting
 	go greet(ch)
 	// sleep for a long time
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	fmt.Println("Main ready!")
-	// receive greeting
-	greeting := <-ch
-	// sleep and print
-	time.Sleep(2 * time.Second)
-	fmt.Println(greeting)
+	for {
+		// receive greeting
+		greeting := <-ch
+		// sleep and print
+		time.Sleep(2 * time.Second)
+		fmt.Println(greeting)
+	}
 
 }
 
@@ -25,6 +30,8 @@ func main() {
 func greet(ch chan<- string) {
 	fmt.Println("Greeter ready!")
 	// greet
-	ch <- "Hello, world!"
+	for _, g := range greetings {
+		ch <- g
+	}
 	fmt.Println("Greeter completed!")
 }
