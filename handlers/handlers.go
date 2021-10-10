@@ -11,7 +11,8 @@ import (
 )
 
 type handler struct {
-	repo repo.Repo
+	repo           repo.Repo
+	incomingOrders chan models.Order
 }
 
 type Handler interface {
@@ -24,7 +25,9 @@ type Handler interface {
 
 // New initialises and creates a new handler with all correct dependencies
 func New() (Handler, error) {
-	r, err := repo.New()
+	// setup a buffered channel for incoming orders
+	incomingOrders := make(chan models.Order, 5)
+	r, err := repo.New(incomingOrders)
 	if err != nil {
 		return nil, err
 	}
