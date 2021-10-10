@@ -19,11 +19,12 @@ type repo struct {
 type Repo interface {
 	CreateOrder(item models.Item) (*models.Order, error)
 	GetAllProducts() []models.Product
+	GetProduct(id string) (models.Product, error)
 	GetOrder(id string) (models.Order, error)
 }
 
 // New creates a new Order repo with the correct database dependencies
-func New() (Repo, error) {
+func New(incoming <-chan models.Order) (Repo, error) {
 	p, err := db.NewProducts()
 	if err != nil {
 		return nil, err
@@ -43,6 +44,11 @@ func New() (Repo, error) {
 // GetAllProducts returns all products in the system
 func (r *repo) GetAllProducts() []models.Product {
 	return r.products.FindAll()
+}
+
+// GetProduct returns the given product if one exists
+func (r repo) GetProduct(id string) (models.Product, error) {
+	return r.products.Find(id)
 }
 
 // GetProduct returns the given order if one exists

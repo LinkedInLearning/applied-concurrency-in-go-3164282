@@ -11,7 +11,8 @@ import (
 )
 
 type handler struct {
-	repo repo.Repo
+	repo           repo.Repo
+	incomingOrders chan models.Order
 }
 
 type Handler interface {
@@ -21,12 +22,18 @@ type Handler interface {
 	OrderInsert(w http.ResponseWriter, r *http.Request)
 }
 
+// New initialises and creates a new handler with all correct dependencies
 func New() (Handler, error) {
-	r, err := repo.New()
+	// setup a buffered channel for incoming orders
+	incomingOrders := make(chan models.Order, 5)
+	r, err := repo.New(incomingOrders)
 	if err != nil {
 		return nil, err
 	}
-	h := handler{repo: r}
+	h := handler{
+		repo:           r,
+		incomingOrders: incomingOrders,
+	}
 	return &h, nil
 }
 
@@ -38,9 +45,8 @@ func (h *handler) Index(w http.ResponseWriter, r *http.Request) {
 
 // ProductIndex displays all products in the system
 func (h *handler) ProductIndex(w http.ResponseWriter, r *http.Request) {
-	p := h.repo.GetAllProducts()
 	// Send an HTTP status & send the slice
-	writeResponse(w, http.StatusOK, p, nil)
+	writeResponse(w, http.StatusOK, h.repo.GetAllProducts(), nil)
 }
 
 // OrderShow fetches and displays one selected product
@@ -71,6 +77,5 @@ func (h *handler) OrderInsert(w http.ResponseWriter, r *http.Request) {
 		writeResponse(w, http.StatusInternalServerError, nil, err)
 		return
 	}
-
 	writeResponse(w, http.StatusOK, order, nil)
 }
