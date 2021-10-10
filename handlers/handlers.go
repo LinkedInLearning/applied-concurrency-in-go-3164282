@@ -106,4 +106,3 @@ func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 	stats, err := h.repo.GetOrderStats(reqCtx)
 	writeResponse(w, http.StatusOK, stats, err)
 }
-	
