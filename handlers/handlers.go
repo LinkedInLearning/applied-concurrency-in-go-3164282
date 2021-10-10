@@ -25,8 +25,8 @@ type Handler interface {
 
 // New initialises and creates a new handler with all correct dependencies
 func New() (Handler, error) {
-	// setup a buffered channel for incoming orders
-	incomingOrders := make(chan models.Order, 5)
+	// setup a channel for incoming orders
+	incomingOrders := make(chan models.Order)
 	r, err := repo.New(incomingOrders)
 	if err != nil {
 		return nil, err
