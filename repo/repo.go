@@ -21,10 +21,11 @@ type Repo interface {
 	GetAllProducts() []models.Product
 	GetProduct(id string) (models.Product, error)
 	GetOrder(id string) (models.Order, error)
+	Close()
 }
 
 // New creates a new Order repo with the correct database dependencies
-func New(incoming <-chan models.Order) (Repo, error) {
+func New() (Repo, error) {
 	p, err := db.NewProducts()
 	if err != nil {
 		return nil, err
@@ -111,4 +112,9 @@ func (r *repo) processOrder(order *models.Order) {
 	total := math.Round(float64(order.Item.Amount)*product.Price*100) / 100
 	order.Total = &total
 	order.Complete()
+}
+
+// Close closes the orders app for incoming orders
+func (r *repo) Close() {
+	close(r.incoming)
 }
