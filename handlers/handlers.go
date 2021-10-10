@@ -11,8 +11,7 @@ import (
 )
 
 type handler struct {
-	repo           repo.Repo
-	incomingOrders chan models.Order
+	repo repo.Repo
 }
 
 type Handler interface {
@@ -20,19 +19,17 @@ type Handler interface {
 	ProductIndex(w http.ResponseWriter, r *http.Request)
 	OrderShow(w http.ResponseWriter, r *http.Request)
 	OrderInsert(w http.ResponseWriter, r *http.Request)
+	Close(w http.ResponseWriter, r *http.Request)
 }
 
 // New initialises and creates a new handler with all correct dependencies
 func New() (Handler, error) {
-	// setup a buffered channel for incoming orders
-	incomingOrders := make(chan models.Order, 5)
-	r, err := repo.New(incomingOrders)
+	r, err := repo.New()
 	if err != nil {
 		return nil, err
 	}
 	h := handler{
-		repo:           r,
-		incomingOrders: incomingOrders,
+		repo: r,
 	}
 	return &h, nil
 }
@@ -78,4 +75,10 @@ func (h *handler) OrderInsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeResponse(w, http.StatusOK, order, nil)
+}
+
+// Close closes the orders app for new orders
+func (h *handler) Close(w http.ResponseWriter, r *http.Request) {
+	h.repo.Close()
+	writeResponse(w, http.StatusOK, "The Orders App is now closed!", nil)
 }
