@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/applied-concurrency-in-go/models"
+	"github.com/applied-concurrency-in-go/utils"
 )
 
 type OrderDB struct {
