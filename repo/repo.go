@@ -10,10 +10,12 @@ import (
 
 // repo holds all the dependencies required for repo operations
 type repo struct {
-	products *db.ProductDB
-	orders   *db.OrderDB
-	incoming chan models.Order
-	done     chan struct{}
+	products  *db.ProductDB
+	orders    *db.OrderDB
+	stats     *statsService
+	incoming  chan models.Order
+	done      chan struct{}
+	processed chan models.Order
 }
 
 // Repo is the interface we expose to outside packages
@@ -23,19 +25,25 @@ type Repo interface {
 	GetProduct(id string) (models.Product, error)
 	GetOrder(id string) (models.Order, error)
 	Close()
+	GetOrderStats() models.Statistics
 }
 
 // New creates a new Order repo with the correct database dependencies
-func New(incoming <-chan models.Order, done <-chan struct{}) (Repo, error) {
+func New() (Repo, error) {
+	processed := make(chan models.Order)
+	done := make(chan struct{})
 	p, err := db.NewProducts()
 	if err != nil {
 		return nil, err
 	}
+	statsService := newStatsService(processed, done)
 	o := repo{
-		products: p,
-		orders:   db.NewOrders(),
-		incoming: make(chan models.Order),
-		done:     make(chan struct{}),
+		products:  p,
+		orders:    db.NewOrders(),
+		stats:     statsService,
+		incoming:  make(chan models.Order),
+		done:      done,
+		processed: processed,
 	}
 
 	// start the order processor
@@ -96,6 +104,7 @@ func (r *repo) processOrders() {
 			r.processOrder(&order)
 			r.orders.Upsert(order)
 			fmt.Printf("Processing order %s completed\n", order.ID)
+			r.processed <- order
 		case <-r.done:
 			fmt.Println("Order processing stopped!")
 			return
@@ -129,4 +138,9 @@ func (r *repo) processOrder(order *models.Order) {
 // Close closes the orders app for incoming orders
 func (r *repo) Close() {
 	close(r.done)
+}
+
+// GetOrderStats returns the order statistics of the orders app
+func (r repo) GetOrderStats() models.Statistics {
+	return r.stats.getOrderStats()
 }
