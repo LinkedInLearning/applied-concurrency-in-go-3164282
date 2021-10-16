@@ -5,11 +5,12 @@ import (
 
 	"github.com/applied-concurrency-in-go/models"
 )
-
+const workerCount = 3
 type statsService struct {
 	stats     *models.Statistics
 	processed <-chan models.Order
 	done      <-chan struct{}
+	pStats chan models.Statistics
 }
 
 func newStatsService(processed <-chan models.Order, done <-chan struct{}) *statsService {
@@ -17,8 +18,12 @@ func newStatsService(processed <-chan models.Order, done <-chan struct{}) *stats
 		stats:     &models.Statistics{},
 		processed: processed,
 		done:      done,
+		pStats: make(chan models.Statistics),
 	}
-	go s.processStats()
+	for i:=0; i< workerCount; i++ {
+		go s.processStats()
+	}
+	go s.reconcile()
 	return &s
 }
 
@@ -28,7 +33,7 @@ func (s *statsService) processStats() {
 		select {
 		case order := <-s.processed:
 			pstats := s.processOrder(order)
-			s.reconcile(pstats)
+			s.pStats <- pstats
 		case <-s.done:
 			return
 		}
@@ -37,8 +42,15 @@ func (s *statsService) processStats() {
 
 // reconcile is a helper method which saves stats object
 // back into the statisticsService
-func (s *statsService) reconcile(pstats models.Statistics) {
-	s.stats.Combine(pstats)
+func (s *statsService) reconcile() {
+	for {
+		select {
+		case p := <-s.pStats:
+			s.stats.Combine(p)
+		case <-s.done:
+			return
+		}
+	}
 }
 
 // processOrder is a helper method that incorporates the current order in the stats service
