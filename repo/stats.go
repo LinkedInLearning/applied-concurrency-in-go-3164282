@@ -1,9 +1,8 @@
 package repo
 
 import (
-	"time"
-
 	"github.com/applied-concurrency-in-go/models"
+	"github.com/applied-concurrency-in-go/utils"
 )
 const workerCount = 3
 type statsService struct {
@@ -72,5 +71,6 @@ func (s *statsService) processOrder(order models.Order) models.Statistics {
 
 // getOrderStats returns a copy of the order stats as it is now
 func (s statsService) getOrderStats() models.Statistics {
+	utils.RandomSleep()
 	return *s.stats
 }
