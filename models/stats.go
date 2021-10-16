@@ -8,11 +8,11 @@ type Statistics struct {
 	Revenue         float64 `json:"revenue"`
 }
 
-// Combine adds on the numbers from a give statistics object
-// into the current statistics object
-func (s *Statistics) Combine(other Statistics) {
-	s.CompletedOrders += other.CompletedOrders
-	s.RejectedOrders += other.RejectedOrders
-	rev := s.Revenue + other.Revenue
-	s.Revenue = math.Round(rev*100) / 100
+// Combine adds the numbers from a two statistics objects
+func Combine(this, that Statistics) Statistics {
+	return Statistics{
+		CompletedOrders: this.CompletedOrders + that.CompletedOrders,
+		RejectedOrders:  this.RejectedOrders + that.RejectedOrders,
+		Revenue:         math.Round((this.Revenue+that.Revenue)*100) / 100,
+	}
 }
