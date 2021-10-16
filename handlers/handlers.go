@@ -20,6 +20,7 @@ type Handler interface {
 	OrderShow(w http.ResponseWriter, r *http.Request)
 	OrderInsert(w http.ResponseWriter, r *http.Request)
 	Close(w http.ResponseWriter, r *http.Request)
+	Stats(w http.ResponseWriter, r *http.Request)
 }
 
 // New initialises and creates a new handler with all correct dependencies
@@ -81,4 +82,9 @@ func (h *handler) OrderInsert(w http.ResponseWriter, r *http.Request) {
 func (h *handler) Close(w http.ResponseWriter, r *http.Request) {
 	h.repo.Close()
 	writeResponse(w, http.StatusOK, "The Orders App is now closed!", nil)
+}
+
+// Stats outputs order statistics from the repo
+func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
+	writeResponse(w, http.StatusOK, h.repo.GetOrderStats(), nil)
 }
