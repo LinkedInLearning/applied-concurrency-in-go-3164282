@@ -26,7 +26,7 @@ type Repo interface {
 }
 
 // New creates a new Order repo with the correct database dependencies
-func New(incoming <-chan models.Order) (Repo, error) {
+func New(incoming <-chan models.Order, done <-chan struct{}) (Repo, error) {
 	p, err := db.NewProducts()
 	if err != nil {
 		return nil, err
