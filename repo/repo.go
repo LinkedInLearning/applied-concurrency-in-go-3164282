@@ -103,8 +103,11 @@ func (r *repo) processOrders() {
 		case order := <-r.incoming:
 			r.processOrder(&order)
 			r.orders.Upsert(order)
+<<<<<<< HEAD
 			fmt.Printf("Processing order %s completed\n", order.ID)
 			r.processed <- order
+=======
+>>>>>>> 6de1eb8 (implement close in the handler)
 		case <-r.done:
 			fmt.Println("Order processing stopped!")
 			return
