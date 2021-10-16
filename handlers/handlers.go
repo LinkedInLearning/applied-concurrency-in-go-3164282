@@ -88,8 +88,3 @@ func (h *handler) Close(w http.ResponseWriter, r *http.Request) {
 func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusOK, h.repo.GetOrderStats(), nil)
 }
-
-// Stats outputs order statistics from the repo
-func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, h.repo.GetOrderStats(), nil)
-}
