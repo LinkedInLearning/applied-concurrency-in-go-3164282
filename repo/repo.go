@@ -6,13 +6,14 @@ import (
 
 	"github.com/applied-concurrency-in-go/db"
 	"github.com/applied-concurrency-in-go/models"
+	"github.com/applied-concurrency-in-go/stats"
 )
 
 // repo holds all the dependencies required for repo operations
 type repo struct {
 	products  *db.ProductDB
 	orders    *db.OrderDB
-	stats     *statsService
+	stats     stats.StatsService
 	incoming  chan models.Order
 	done      chan struct{}
 	processed chan models.Order
@@ -30,13 +31,13 @@ type Repo interface {
 
 // New creates a new Order repo with the correct database dependencies
 func New() (Repo, error) {
-	processed := make(chan models.Order)
+	processed := make(chan models.Order, stats.WorkerCount)
 	done := make(chan struct{})
 	p, err := db.NewProducts()
 	if err != nil {
 		return nil, err
 	}
-	statsService := newStatsService(processed, done)
+	statsService := stats.New(processed, done)
 	o := repo{
 		products:  p,
 		orders:    db.NewOrders(),
@@ -73,14 +74,12 @@ func (r *repo) CreateOrder(item models.Item) (*models.Order, error) {
 	}
 	order := models.NewOrder(item)
 	// place the order on the incoming orders channel
-	for {
-		select {
-		case r.incoming <- order:
-			r.orders.Upsert(order)
-			return &order, nil
-		case <-r.done:
-			return nil, fmt.Errorf("orders app is closed, try again later")
-		}
+	select {
+	case r.incoming <- order:
+		r.orders.Upsert(order)
+		return &order, nil
+	case <-r.done:
+		return nil, fmt.Errorf("orders app is closed, try again later")
 	}
 }
 
@@ -102,7 +101,6 @@ func (r *repo) processOrders() {
 		case order := <-r.incoming:
 			r.processOrder(&order)
 			r.orders.Upsert(order)
-
 			fmt.Printf("Processing order %s completed\n", order.ID)
 			r.processed <- order
 		case <-r.done:
@@ -142,5 +140,5 @@ func (r *repo) Close() {
 
 // GetOrderStats returns the order statistics of the orders app
 func (r repo) GetOrderStats() models.Statistics {
-	return r.stats.getOrderStats()
+	return r.stats.GetStats()
 }
