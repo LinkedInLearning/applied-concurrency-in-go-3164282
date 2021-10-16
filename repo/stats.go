@@ -1,0 +1,64 @@
+package repo
+
+import (
+	"time"
+
+	"github.com/applied-concurrency-in-go/models"
+)
+
+type statsService struct {
+	stats     *models.Statistics
+	processed <-chan models.Order
+	done      <-chan struct{}
+}
+
+func newStatsService(processed <-chan models.Order, done <-chan struct{}) *statsService {
+	s := statsService{
+		stats:     &models.Statistics{},
+		processed: processed,
+		done:      done,
+	}
+	go s.processStats()
+	return &s
+}
+
+// processStats is the overall processing method that listens to incoming orders
+func (s *statsService) processStats() {
+	for {
+		select {
+		case order := <-s.processed:
+			pstats := s.processOrder(order)
+			s.reconcile(pstats)
+		case <-s.done:
+			return
+		}
+	}
+}
+
+// reconcile is a helper method which saves stats object
+// back into the statisticsService
+func (s *statsService) reconcile(pstats models.Statistics) {
+	s.stats.Combine(pstats)
+}
+
+// processOrder is a helper method that incorporates the current order in the stats service
+func (s *statsService) processOrder(order models.Order) models.Statistics {
+	// simulate processing as a costly operation
+	time.Sleep(500 * time.Millisecond)
+	// completed orders increment add to the revenue
+	if order.Status == models.OrderStatus_Completed {
+		return models.Statistics{
+			CompletedOrders: 1,
+			Revenue:         *order.Total,
+		}
+	}
+	// otherwise the order is rejected
+	return models.Statistics{
+		RejectedOrders: 1,
+	}
+}
+
+// getOrderStats returns a copy of the order stats as it is now
+func (s statsService) getOrderStats() models.Statistics {
+	return *s.stats
+}
