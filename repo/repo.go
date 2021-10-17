@@ -49,7 +49,7 @@ func New() (Repo, error) {
 	}
 
 	// start the order processor
-	go o.ProcessOrders()
+	go o.processOrders()
 	return &o, nil
 }
 

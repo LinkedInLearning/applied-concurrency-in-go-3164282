@@ -101,5 +101,9 @@ func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 
 // Stats outputs order statistics from the repo
 func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, h.repo.GetOrderStats(), nil)
+	reqCtx := r.Context()
+	// TODO implement timeout
+	stats, err := h.repo.GetOrderStats(reqCtx)
+	writeResponse(w, http.StatusOK, stats, err)
 }
+	
