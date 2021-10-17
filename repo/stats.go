@@ -1,15 +1,19 @@
 package repo
 
 import (
+	"time"
+
 	"github.com/applied-concurrency-in-go/models"
 	"github.com/applied-concurrency-in-go/utils"
 )
+
 const workerCount = 3
+
 type statsService struct {
 	stats     *models.Statistics
 	processed <-chan models.Order
 	done      <-chan struct{}
-	pStats chan models.Statistics
+	pStats    chan models.Statistics
 }
 
 func newStatsService(processed <-chan models.Order, done <-chan struct{}) *statsService {
@@ -17,9 +21,9 @@ func newStatsService(processed <-chan models.Order, done <-chan struct{}) *stats
 		stats:     &models.Statistics{},
 		processed: processed,
 		done:      done,
-		pStats: make(chan models.Statistics),
+		pStats:    make(chan models.Statistics),
 	}
-	for i:=0; i< workerCount; i++ {
+	for i := 0; i < workerCount; i++ {
 		go s.processStats()
 	}
 	go s.reconcile()
@@ -70,7 +74,11 @@ func (s *statsService) processOrder(order models.Order) models.Statistics {
 }
 
 // getOrderStats returns a copy of the order stats as it is now
-func (s statsService) getOrderStats() models.Statistics {
-	utils.RandomSleep()
-	return *s.stats
+func (s statsService) getOrderStats() <-chan models.Statistics {
+	stats := make(chan models.Statistics)
+	go func() {
+		utils.RandomSleep()
+		stats <- *s.stats
+	}()
+	return stats
 }
