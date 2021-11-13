@@ -23,6 +23,8 @@ type Handler interface {
 	OrderInsert(w http.ResponseWriter, r *http.Request)
 	Close(w http.ResponseWriter, r *http.Request)
 	Stats(w http.ResponseWriter, r *http.Request)
+	Open(w http.ResponseWriter, r *http.Request)
+	OrderReverse(w http.ResponseWriter, r *http.Request)
 }
 
 // New initialises and creates a new handler with all correct dependencies
@@ -49,7 +51,7 @@ func (h *handler) ProductIndex(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusOK, h.repo.GetAllProducts(), nil)
 }
 
-// OrderShow fetches and displays one selected product
+// OrderShow fetches and displays one order
 func (h *handler) OrderShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orderId := vars["orderId"]
@@ -102,8 +104,40 @@ func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 // Stats outputs order statistics from the repo
 func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 	reqCtx := r.Context()
-	ctx, cancel := context.WithTimeout(reqCtx, 100 * time.Millisecond)
+	ctx, cancel := context.WithTimeout(reqCtx, 100*time.Millisecond)
 	defer cancel()
 	stats, err := h.repo.GetOrderStats(ctx)
 	writeResponse(w, http.StatusOK, stats, err)
+}
+
+// Open opens the order shop for new orders
+func (h *handler) Open(w http.ResponseWriter, r *http.Request) {
+	h.incomingOrders = make(chan models.Order)
+	writeResponse(w, http.StatusOK, "The H+ Sport Orders App is now open!", nil)
+}
+
+// OrderReverse fetches and displays one selected product
+func (h *handler) OrderReverse(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	orderId := vars["orderId"]
+	// Fetch order, error if none exists
+	order, err := h.repo.GetOrder(orderId)
+	if err != nil {
+		writeResponse(w, http.StatusNotFound, nil, err)
+	}
+	// set reversal requested
+	order.Status = models.OrderStatus_ReversalRequested
+	// Change the order amount to negative for reversal
+	order.Item.Amount = -order.Item.Amount
+	// place the reversal on the incoming orders channel
+	select {
+	case h.incomingOrders <- order:
+		// Send an HTTP success status & the return value from the repo
+		writeResponse(w, http.StatusOK, order, nil)
+	case <-h.done:
+		writeResponse(w, http.StatusOK, "Sorry, the orders app is closed", nil)
+	}
+
+	// Send an HTTP success status & the return value from the repo
+	writeResponse(w, http.StatusOK, order, nil)
 }

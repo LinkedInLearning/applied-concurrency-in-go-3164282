@@ -60,8 +60,15 @@ func (s *statsService) reconcile() {
 func (s *statsService) processOrder(order models.Order) models.Statistics {
 	// simulate processing as a costly operation
 	time.Sleep(500 * time.Millisecond)
-	// completed orders increment add to the revenue
+	// completed orders add to the revenue
 	if order.Status == models.OrderStatus_Completed {
+		return models.Statistics{
+			CompletedOrders: 1,
+			Revenue:         *order.Total,
+		}
+	}
+	// reversed orders remove from the revenue
+	if order.Status == models.OrderStatus_Reversed {
 		return models.Statistics{
 			CompletedOrders: 1,
 			Revenue:         *order.Total,
