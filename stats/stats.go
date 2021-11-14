@@ -77,6 +77,13 @@ func (s *statsService) processOrder(order models.Order) models.Statistics {
 			Revenue:         *order.Total,
 		}
 	}
+	// reversed orders remove from the revenue
+	if order.Status == models.OrderStatus_Reversed {
+		return models.Statistics{
+			ReversedOrders: 1,
+			Revenue:        -*order.Total,
+		}
+	}
 	// otherwise the order is rejected
 	return models.Statistics{
 		RejectedOrders: 1,

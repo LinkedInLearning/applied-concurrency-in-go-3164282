@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/applied-concurrency-in-go/models"
@@ -12,10 +13,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// handler holds all the dependencies required for server requests
 type handler struct {
 	repo repo.Repo
+	once sync.Once
 }
-
+// Handler is the interface we expose to outside packages
 type Handler interface {
 	Index(w http.ResponseWriter, r *http.Request)
 	ProductIndex(w http.ResponseWriter, r *http.Request)
@@ -23,11 +26,9 @@ type Handler interface {
 	OrderInsert(w http.ResponseWriter, r *http.Request)
 	Close(w http.ResponseWriter, r *http.Request)
 	Stats(w http.ResponseWriter, r *http.Request)
-	Open(w http.ResponseWriter, r *http.Request)
 	OrderReverse(w http.ResponseWriter, r *http.Request)
 }
 
-// New initialises and creates a new handler with all correct dependencies
 func New() (Handler, error) {
 	r, err := repo.New()
 	if err != nil {
@@ -39,7 +40,7 @@ func New() (Handler, error) {
 	return &h, nil
 }
 
-// Index returns a simple hello response for the homepage
+// Index returns a simple welcome response for the homepage
 func (h *handler) Index(w http.ResponseWriter, r *http.Request) {
 	// Send an HTTP status & a hardcoded message
 	writeResponse(w, http.StatusOK, "Welcome to the Orders App!", nil)
@@ -51,7 +52,7 @@ func (h *handler) ProductIndex(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusOK, h.repo.GetAllProducts(), nil)
 }
 
-// OrderShow fetches and displays one order
+// OrderShow fetches and displays one existing order
 func (h *handler) OrderShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orderId := vars["orderId"]
@@ -84,14 +85,14 @@ func (h *handler) OrderInsert(w http.ResponseWriter, r *http.Request) {
 
 // Close closes the orders app for new orders
 func (h *handler) Close(w http.ResponseWriter, r *http.Request) {
-	h.repo.Close()
+	h.invokeClose()
 	writeResponse(w, http.StatusOK, "The Orders App is now closed!", nil)
 }
 
 // Stats outputs order statistics from the repo
 func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 	reqCtx := r.Context()
-	ctx, cancel := context.WithTimeout(reqCtx, 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(reqCtx, 600*time.Millisecond)
 	defer cancel()
 	stats, err := h.repo.GetOrderStats(ctx)
 	if err != nil {
@@ -101,43 +102,21 @@ func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusOK, stats, nil)
 }
 
-// Stats outputs order statistics from the repo
-func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
-	reqCtx := r.Context()
-	ctx, cancel := context.WithTimeout(reqCtx, 100*time.Millisecond)
-	defer cancel()
-	stats, err := h.repo.GetOrderStats(ctx)
-	writeResponse(w, http.StatusOK, stats, err)
-}
-
-// Open opens the order shop for new orders
-func (h *handler) Open(w http.ResponseWriter, r *http.Request) {
-	h.incomingOrders = make(chan models.Order)
-	writeResponse(w, http.StatusOK, "The H+ Sport Orders App is now open!", nil)
-}
-
 // OrderReverse fetches and displays one selected product
 func (h *handler) OrderReverse(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orderId := vars["orderId"]
-	// Fetch order, error if none exists
-	order, err := h.repo.GetOrder(orderId)
+	order, err := h.repo.RequestReversal(orderId)
 	if err != nil {
-		writeResponse(w, http.StatusNotFound, nil, err)
-	}
-	// set reversal requested
-	order.Status = models.OrderStatus_ReversalRequested
-	// Change the order amount to negative for reversal
-	order.Item.Amount = -order.Item.Amount
-	// place the reversal on the incoming orders channel
-	select {
-	case h.incomingOrders <- order:
-		// Send an HTTP success status & the return value from the repo
-		writeResponse(w, http.StatusOK, order, nil)
-	case <-h.done:
-		writeResponse(w, http.StatusOK, "Sorry, the orders app is closed", nil)
+		writeResponse(w, http.StatusInternalServerError, nil, err)
+		return
 	}
 
-	// Send an HTTP success status & the return value from the repo
 	writeResponse(w, http.StatusOK, order, nil)
+}
+
+func (h *handler) invokeClose() {
+	h.once.Do(func() {
+		h.repo.Close()
+	})
 }

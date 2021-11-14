@@ -48,5 +48,3 @@ func (o *Order) Complete() {
 	}
 	o.Status = OrderStatus_Completed
 }
-
-

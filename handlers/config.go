@@ -19,7 +19,6 @@ func ConfigureHandler(handler Handler) *mux.Router {
 		Handler(http.HandlerFunc(handler.OrderInsert))
 	router.Methods("POST").Path("/close").Handler(http.HandlerFunc(handler.Close))
 	router.Methods("GET").Path("/stats").Handler(http.HandlerFunc(handler.Stats))
-	router.Methods("POST").Path("/open").Handler(http.HandlerFunc(handler.Open))
 	router.Methods("DELETE").Path("/orders/{orderId}").
 		Handler(http.HandlerFunc(handler.OrderReverse))
 
