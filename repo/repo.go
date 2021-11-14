@@ -24,10 +24,10 @@ type repo struct {
 type Repo interface {
 	CreateOrder(item models.Item) (*models.Order, error)
 	GetAllProducts() []models.Product
-	GetProduct(id string) (models.Product, error)
 	GetOrder(id string) (models.Order, error)
 	Close()
 	GetOrderStats(ctx context.Context) (models.Statistics, error)
+	RequestReversal(orderId string) (*models.Order, error)
 }
 
 // New creates a new Order repo with the correct database dependencies
@@ -56,11 +56,6 @@ func New() (Repo, error) {
 // GetAllProducts returns all products in the system
 func (r *repo) GetAllProducts() []models.Product {
 	return r.products.FindAll()
-}
-
-// GetProduct returns the given product if one exists
-func (r repo) GetProduct(id string) (models.Product, error) {
-	return r.products.Find(id)
 }
 
 // GetProduct returns the given order if one exists
@@ -147,4 +142,10 @@ func (r repo) GetOrderStats(ctx context.Context) (models.Statistics, error) {
 	case <-ctx.Done():
 		return models.Statistics{}, ctx.Err()
 	}
+}
+
+// RequestReversal fetches an existing order and updates it for reversal
+func (r repo) RequestReversal(orderId string) (*models.Order, error) {
+	//TODO: implement me!
+	panic("request reversal not implemented yet")
 }

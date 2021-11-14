@@ -77,6 +77,10 @@ func (s *statsService) processOrder(order models.Order) models.Statistics {
 			Revenue:         *order.Total,
 		}
 	}
+	// TODO: implement order reversal
+	if order.Status == models.OrderStatus_Reversed {
+		panic("order reversal not implemented in stats")
+	}
 	// otherwise the order is rejected
 	return models.Statistics{
 		RejectedOrders: 1,
