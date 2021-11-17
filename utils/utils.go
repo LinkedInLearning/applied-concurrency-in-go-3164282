@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/applied-concurrency-in-go/models"
 )
@@ -12,7 +13,7 @@ import (
 const productInputPath string = "./input/products.csv"
 
 // importProducts imports the start position of the products DB
-func ImportProducts(products map[string]models.Product) error {
+func ImportProducts(products *sync.Map) error {
 	input, err := readCsv(productInputPath)
 	if err != nil {
 		return err
@@ -35,12 +36,12 @@ func ImportProducts(products map[string]models.Product) error {
 		if err != nil {
 			continue
 		}
-		products[id] = models.Product{
+		products.Store(id, models.Product{
 			ID:    id,
 			Name:  fmt.Sprintf("%s(%s)", line[1], line[3]),
 			Stock: stock,
 			Price: price,
-		}
+		})
 	}
 	return nil
 }
