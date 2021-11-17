@@ -35,17 +35,17 @@ func New() (Repo, error) {
 }
 
 // GetAllProducts returns all products in the system
-func (r repo) GetAllProducts() []models.Product {
+func (r *repo) GetAllProducts() []models.Product {
 	return r.products.FindAll()
 }
 
 // GetProduct returns the given order if one exists
-func (r repo) GetOrder(id string) (models.Order, error) {
+func (r *repo) GetOrder(id string) (models.Order, error) {
 	return r.orders.Find(id)
 }
 
 // CreateOrder creates a new order for the given item
-func (r repo) CreateOrder(item models.Item) (*models.Order, error) {
+func (r *repo) CreateOrder(item models.Item) (*models.Order, error) {
 	if err := r.validateItem(item); err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (r repo) CreateOrder(item models.Item) (*models.Order, error) {
 }
 
 // validateItem runs validations on a given order
-func (r repo) validateItem(item models.Item) error {
+func (r *repo) validateItem(item models.Item) error {
 	if item.Amount < 1 {
 		return fmt.Errorf("order amount must be at least 1:got %d", item.Amount)
 	}
@@ -66,14 +66,14 @@ func (r repo) validateItem(item models.Item) error {
 	return nil
 }
 
-func (r repo) processOrders(order *models.Order) {
+func (r *repo) processOrders(order *models.Order) {
 	r.processOrder(order)
 	r.orders.Upsert(*order)
 	fmt.Printf("Processing order %s completed\n", order.ID)
 }
 
 // processOrder is an internal method which completes or rejects an order
-func (r repo) processOrder(order *models.Order) {
+func (r *repo) processOrder(order *models.Order) {
 	item := order.Item
 	product, err := r.products.Find(item.ProductID)
 	if err != nil {
