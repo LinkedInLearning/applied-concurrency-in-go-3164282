@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/applied-concurrency-in-go/models"
 	"github.com/applied-concurrency-in-go/repo"
@@ -11,7 +13,7 @@ import (
 )
 
 type handler struct {
-	repo           repo.Repo
+	repo repo.Repo
 }
 
 type Handler interface {
@@ -86,5 +88,13 @@ func (h *handler) Close(w http.ResponseWriter, r *http.Request) {
 
 // Stats outputs order statistics from the repo
 func (h *handler) Stats(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, h.repo.GetOrderStats(), nil)
+	reqCtx := r.Context()
+	ctx, cancel := context.WithTimeout(reqCtx, 100*time.Millisecond)
+	defer cancel()
+	stats, err := h.repo.GetOrderStats(ctx)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, nil, err)
+		return
+	}
+	writeResponse(w, http.StatusOK, stats, nil)
 }
