@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -26,7 +27,7 @@ type Repo interface {
 	GetProduct(id string) (models.Product, error)
 	GetOrder(id string) (models.Order, error)
 	Close()
-	GetOrderStats() models.Statistics
+	GetOrderStats(ctx context.Context) (models.Statistics, error)
 }
 
 // New creates a new Order repo with the correct database dependencies
@@ -139,6 +140,11 @@ func (r *repo) Close() {
 }
 
 // GetOrderStats returns the order statistics of the orders app
-func (r repo) GetOrderStats() models.Statistics {
-	return r.stats.GetStats()
+func (r repo) GetOrderStats(ctx context.Context) (models.Statistics, error) {
+	select {
+	case s := <-r.stats.GetStats(ctx):
+		return s, nil
+	case <-ctx.Done():
+		return models.Statistics{}, ctx.Err()
+	}
 }
