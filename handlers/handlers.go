@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/applied-concurrency-in-go/models"
 	"github.com/applied-concurrency-in-go/repo"
@@ -12,8 +13,8 @@ import (
 
 type handler struct {
 	repo repo.Repo
+	once sync.Once
 }
-
 type Handler interface {
 	Index(w http.ResponseWriter, r *http.Request)
 	ProductIndex(w http.ResponseWriter, r *http.Request)
@@ -22,7 +23,6 @@ type Handler interface {
 	Close(w http.ResponseWriter, r *http.Request)
 }
 
-// New initialises and creates a new handler with all correct dependencies
 func New() (Handler, error) {
 	r, err := repo.New()
 	if err != nil {
@@ -79,6 +79,12 @@ func (h *handler) OrderInsert(w http.ResponseWriter, r *http.Request) {
 
 // Close closes the orders app for new orders
 func (h *handler) Close(w http.ResponseWriter, r *http.Request) {
-	h.repo.Close()
+	h.invokeClose()
 	writeResponse(w, http.StatusOK, "The Orders App is now closed!", nil)
+}
+
+func (h *handler) invokeClose() {
+	h.once.Do(func() {
+		h.repo.Close()
+	})
 }

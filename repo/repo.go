@@ -13,6 +13,7 @@ type repo struct {
 	products *db.ProductDB
 	orders   *db.OrderDB
 	incoming chan models.Order
+	done     chan struct{}
 }
 
 // Repo is the interface we expose to outside packages
@@ -34,6 +35,7 @@ func New() (Repo, error) {
 		products: p,
 		orders:   db.NewOrders(),
 		incoming: make(chan models.Order),
+		done:     make(chan struct{}),
 	}
 
 	// start the order processor
@@ -63,11 +65,14 @@ func (r *repo) CreateOrder(item models.Item) (*models.Order, error) {
 		return nil, err
 	}
 	order := models.NewOrder(item)
-	r.orders.Upsert(order)
-
 	// place the order on the incoming orders channel
-	r.incoming <- order
-	return &order, nil
+	select {
+	case r.incoming <- order:
+		r.orders.Upsert(order)
+		return &order, nil
+	case <-r.done:
+		return nil, fmt.Errorf("orders app is closed, try again later")
+	}
 }
 
 // validateItem runs validations on a given order
@@ -83,12 +88,17 @@ func (r *repo) validateItem(item models.Item) error {
 
 func (r *repo) processOrders() {
 	fmt.Println("Order processing started!")
-	for order := range r.incoming {
-		r.processOrder(&order)
-		r.orders.Upsert(order)
-		fmt.Printf("Processing order %s completed\n", order.ID)
+	for {
+		select {
+		case order := <-r.incoming:
+			r.processOrder(&order)
+			r.orders.Upsert(order)
+			fmt.Printf("Processing order %s completed\n", order.ID)
+		case <-r.done:
+			fmt.Println("Order processing stopped!")
+			return
+		}
 	}
-	fmt.Println("Order processing stopped!")
 }
 
 // processOrder is an internal method which completes or rejects an order
@@ -116,6 +126,5 @@ func (r *repo) processOrder(order *models.Order) {
 
 // Close closes the orders app for incoming orders
 func (r *repo) Close() {
-	//TODO: implement me!
-	panic("not implemented yet")
+	close(r.done)
 }
