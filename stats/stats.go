@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
@@ -18,7 +19,7 @@ type statsService struct {
 }
 
 type StatsService interface {
-	GetStats() models.Statistics
+	GetStats(ctx context.Context) <-chan models.Statistics
 }
 
 func New(processed <-chan models.Order, done <-chan struct{}) StatsService {
@@ -83,8 +84,20 @@ func (s *statsService) processOrder(order models.Order) models.Statistics {
 }
 
 // GetStats returns the latest order stats
-func (s *statsService) GetStats() models.Statistics {
-	return s.result.Get()
+func (s *statsService) GetStats(ctx context.Context) <-chan models.Statistics {
+	stats := make(chan models.Statistics)
+	go func() {
+		randomSleep()
+		select {
+		case stats <- s.result.Get():
+			fmt.Println("Stats fetched successfully")
+			return
+		case <-ctx.Done():
+			fmt.Println("Context deadline exceeded")
+			return
+		}
+	}()
+	return stats
 }
 
 func randomSleep() {
