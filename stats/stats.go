@@ -1,24 +1,30 @@
-package repo
+package stats
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/applied-concurrency-in-go/models"
 )
 
 type statsService struct {
-	stats     *models.Statistics
+	result    Result
 	processed <-chan models.Order
 	done      <-chan struct{}
 }
 
-func newStatsService(processed <-chan models.Order, done <-chan struct{}) *statsService {
+type StatsService interface {
+	GetStats() models.Statistics
+}
+
+func New(processed <-chan models.Order, done <-chan struct{}) StatsService {
 	s := statsService{
-		stats:     &models.Statistics{},
+		result:    &result{},
 		processed: processed,
 		done:      done,
 	}
+
 	go s.processStats()
 	return &s
 }
@@ -41,13 +47,13 @@ func (s *statsService) processStats() {
 // reconcile is a helper method which saves stats object
 // back into the statisticsService
 func (s *statsService) reconcile(pstats models.Statistics) {
-	s.stats.Combine(pstats)
+	s.result.Combine(pstats)
 }
 
 // processOrder is a helper method that incorporates the current order in the stats service
 func (s *statsService) processOrder(order models.Order) models.Statistics {
 	// simulate processing as a costly operation
-	time.Sleep(500 * time.Millisecond)
+	randomSleep()
 	// completed orders increment add to the revenue
 	if order.Status == models.OrderStatus_Completed {
 		return models.Statistics{
@@ -61,7 +67,12 @@ func (s *statsService) processOrder(order models.Order) models.Statistics {
 	}
 }
 
-// getOrderStats returns a copy of the order stats as it is now
-func (s statsService) getOrderStats() models.Statistics {
-	return *s.stats
+// GetStats returns the latest order stats
+func (s *statsService) GetStats() models.Statistics {
+	return s.result.Get()
+}
+
+func randomSleep() {
+	rand.Seed(time.Now().UnixNano())
+	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 }
