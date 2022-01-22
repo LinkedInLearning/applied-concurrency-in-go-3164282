@@ -22,9 +22,12 @@ To resolve this issue:
 
 ## Installing
 1. To use these exercise files, you must have the following installed:
-	- [list of requirements for course]
+	- [Go development tools](https://go.dev/doc/install)
+    - [Visual Studio Code](https://code.visualstudio.com/) or any other IDE of your choice
+    - [Postman](https://www.postman.com/)
+    - [Git](https://git-scm.com/)
 2. Clone this repository into your local machine using the terminal (Mac), CMD (Windows), or a GUI tool like SourceTree.
-3. [Course-specific instructions]
+3. Run `go get .` from the root directory where you cloned this repository to install dependencies used in your current branch. Note, different branches have different dependencies, so make sure to run this command when you change branch.
 
 
 [0]: # (Replace these placeholder URLs with actual course URLs)
