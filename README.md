@@ -1,7 +1,10 @@
 # Applied Concurrency in Go
-This is the repository for the LinkedIn Learning course `Applied Concurrency in Go`. The full course is available from [LinkedIn Learning][lil-course-url].
+This is the repository for the LinkedIn Learning course Applied Concurrency in Go. The full course is available from [LinkedIn Learning][lil-course-url].
 
-_See the readme file in the main branch for updated instructions and information._
+![Applied Concurrency in Go][lil-thumbnail-url] 
+
+Concurrency can be a confusing and intimidating topic to engineers, but it is an essential tool when writing production code as it allows you to write faster and more efficient solutions. In this course, Adelina Simion demystifies the intimidating topic of concurrency and showcases how to use the powerful tools of goroutines and channels. Go is designed with concurrency in mind so every developer should feel confident to use these powerful tools in their daily work. Join Adelina in this course to gain a thorough understanding of Go concurrency and learn how to apply it to solve some common engineering problems.
+
 ## Instructions
 This repository has branches for each of the videos in the course. You can use the branch pop up menu in github to switch to a specific branch and take a look at the course at that stage, or you can add `/tree/BRANCH_NAME` to the URL to go to the branch you want to access.
 
@@ -29,9 +32,20 @@ To resolve this issue:
 2. Clone this repository into your local machine using the terminal (Mac), CMD (Windows), or a GUI tool like SourceTree.
 3. Run `go get .` from the root directory where you cloned this repository to install dependencies used in your current branch. Note, different branches have different dependencies, so make sure to run this command when you change branch.
 
+### Instructor
 
-[0]: # (Replace these placeholder URLs with actual course URLs)
+Adelina Simion 
+                            
 
-[lil-course-url]: https://www.linkedin.com/learning/
-[lil-thumbnail-url]: http://
+
+                            
+
+Check out my other courses on [LinkedIn Learning](https://www.linkedin.com/learning/instructors/adelina-simion).
+
+[lil-course-url]: https://www.linkedin.com/learning/applied-concurrency-in-go
+[lil-thumbnail-url]: https://cdn.lynda.com/course/3164282/3164282-1643050323318-16x9.jpg
+
+
+
+
 
